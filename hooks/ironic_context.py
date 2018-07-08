@@ -133,7 +133,6 @@ class IronicContext(context.OSContextGenerator):
             'enabled_drivers': config('enabled-drivers'),
             'nodes_cleaning': config('nodes-cleaning'),
             'dhcp_provider': config('dhcp-provider'),
-            'disk_devices': config('disk-devices'),
             'deploy_network_uuid': config('deploy-network-uuid'),
             'cleaning_network_uuid': config('cleaning-network-uuid'),
             'pxe_bootfile_name': pxe_bootfile_name,

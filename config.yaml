@@ -3,10 +3,6 @@ options:
     default: False
     type: boolean
     description: Enable debug logging.
-  verbose:
-    default: False
-    type: boolean
-    description: Enable verbose logging.
   enabled-drivers:
     default: "pxe_ipmitool,agent_ipmitool"
     type: string
@@ -56,12 +52,6 @@ options:
     default: neutron
     description: |
       DHCP provider used by Ironic. Valid options are: 'neutron' and 'none'.
-  disk-devices:
-    type: string
-    default: "cciss/c0d0,sda,hda,vda"
-    description: |
-      The disk devices to scan while doing the deploy. A comma separated list
-      should be given.
   deploy-network-uuid:
     type: string
     description: |
@@ -95,6 +85,8 @@ options:
 
       For series=Xenial we support cloud archives for openstack-release:
          * newton
+         * ...
+         * queens
 
       NOTE: updating this setting to a source that is known to provide
       a later version of OpenStack will trigger a software upgrade.
@@ -160,7 +152,6 @@ options:
       response code when trying to download from the temporary
       URL, try raising this duration.
   swift-url:
-    default: blah
     type: string
     description: |
       Base URL used for temporary URLs generated for Ironic Python Agent.

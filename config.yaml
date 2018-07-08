@@ -160,6 +160,7 @@ options:
       response code when trying to download from the temporary
       URL, try raising this duration.
   swift-url:
+    default: blah
     type: string
     description: |
       Base URL used for temporary URLs generated for Ironic Python Agent.

@@ -1,18 +1,16 @@
 # Copyright 2014-2015 Canonical Limited.
 #
-# This file is part of charm-helpers.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# charm-helpers is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License version 3 as
-# published by the Free Software Foundation.
+#  http://www.apache.org/licenses/LICENSE-2.0
 #
-# charm-helpers is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with charm-helpers.  If not, see <http://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Various utilies for dealing with Neutron and the renaming from Quantum.
 
@@ -25,7 +23,10 @@ from charmhelpers.core.hookenv import (
     ERROR,
 )
 
-from charmhelpers.contrib.openstack.utils import os_release
+from charmhelpers.contrib.openstack.utils import (
+    os_release,
+    CompareOpenStackReleases,
+)
 
 
 def headers_package():
@@ -33,6 +34,7 @@ def headers_package():
     for building DKMS package"""
     kver = check_output(['uname', '-r']).decode('UTF-8').strip()
     return 'linux-headers-%s' % kver
+
 
 QUANTUM_CONF_DIR = '/etc/quantum'
 
@@ -50,27 +52,22 @@ def determine_dkms_package():
     if kernel_version() >= (3, 13):
         return []
     else:
-        return ['openvswitch-datapath-dkms']
+        return [headers_package(), 'openvswitch-datapath-dkms']
 
 
 # legacy
 
 
 def quantum_plugins():
-    from charmhelpers.contrib.openstack import context
     return {
         'ovs': {
             'config': '/etc/quantum/plugins/openvswitch/'
                       'ovs_quantum_plugin.ini',
             'driver': 'quantum.plugins.openvswitch.ovs_quantum_plugin.'
                       'OVSQuantumPluginV2',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=QUANTUM_CONF_DIR)],
+            'contexts': [],
             'services': ['quantum-plugin-openvswitch-agent'],
-            'packages': [[headers_package()] + determine_dkms_package(),
+            'packages': [determine_dkms_package(),
                          ['quantum-plugin-openvswitch-agent']],
             'server_packages': ['quantum-server',
                                 'quantum-plugin-openvswitch'],
@@ -80,11 +77,7 @@ def quantum_plugins():
             'config': '/etc/quantum/plugins/nicira/nvp.ini',
             'driver': 'quantum.plugins.nicira.nicira_nvp_plugin.'
                       'QuantumPlugin.NvpPluginV2',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=QUANTUM_CONF_DIR)],
+            'contexts': [],
             'services': [],
             'packages': [],
             'server_packages': ['quantum-server',
@@ -93,11 +86,11 @@ def quantum_plugins():
         }
     }
 
+
 NEUTRON_CONF_DIR = '/etc/neutron'
 
 
 def neutron_plugins():
-    from charmhelpers.contrib.openstack import context
     release = os_release('nova-common')
     plugins = {
         'ovs': {
@@ -105,13 +98,9 @@ def neutron_plugins():
                       'ovs_neutron_plugin.ini',
             'driver': 'neutron.plugins.openvswitch.ovs_neutron_plugin.'
                       'OVSNeutronPluginV2',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': ['neutron-plugin-openvswitch-agent'],
-            'packages': [[headers_package()] + determine_dkms_package(),
+            'packages': [determine_dkms_package(),
                          ['neutron-plugin-openvswitch-agent']],
             'server_packages': ['neutron-server',
                                 'neutron-plugin-openvswitch'],
@@ -121,11 +110,7 @@ def neutron_plugins():
             'config': '/etc/neutron/plugins/nicira/nvp.ini',
             'driver': 'neutron.plugins.nicira.nicira_nvp_plugin.'
                       'NeutronPlugin.NvpPluginV2',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': [],
             'packages': [],
             'server_packages': ['neutron-server',
@@ -135,11 +120,7 @@ def neutron_plugins():
         'nsx': {
             'config': '/etc/neutron/plugins/vmware/nsx.ini',
             'driver': 'vmware',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': [],
             'packages': [],
             'server_packages': ['neutron-server',
@@ -149,13 +130,9 @@ def neutron_plugins():
         'n1kv': {
             'config': '/etc/neutron/plugins/cisco/cisco_plugins.ini',
             'driver': 'neutron.plugins.cisco.network_plugin.PluginV2',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': [],
-            'packages': [[headers_package()] + determine_dkms_package(),
+            'packages': [determine_dkms_package(),
                          ['neutron-plugin-cisco']],
             'server_packages': ['neutron-server',
                                 'neutron-plugin-cisco'],
@@ -164,17 +141,13 @@ def neutron_plugins():
         'Calico': {
             'config': '/etc/neutron/plugins/ml2/ml2_conf.ini',
             'driver': 'neutron.plugins.ml2.plugin.Ml2Plugin',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': ['calico-felix',
                          'bird',
                          'neutron-dhcp-agent',
                          'nova-api-metadata',
                          'etcd'],
-            'packages': [[headers_package()] + determine_dkms_package(),
+            'packages': [determine_dkms_package(),
                          ['calico-compute',
                           'bird',
                           'neutron-dhcp-agent',
@@ -186,11 +159,7 @@ def neutron_plugins():
         'vsp': {
             'config': '/etc/neutron/plugins/nuage/nuage_plugin.ini',
             'driver': 'neutron.plugins.nuage.plugin.NuagePlugin',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': [],
             'packages': [],
             'server_packages': ['neutron-server', 'neutron-plugin-nuage'],
@@ -198,14 +167,12 @@ def neutron_plugins():
         },
         'plumgrid': {
             'config': '/etc/neutron/plugins/plumgrid/plumgrid.ini',
-            'driver': 'neutron.plugins.plumgrid.plumgrid_plugin.plumgrid_plugin.NeutronPluginPLUMgridV2',
-            'contexts': [
-                context.SharedDBContext(user=config('database-user'),
-                                        database=config('database'),
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'driver': ('neutron.plugins.plumgrid.plumgrid_plugin'
+                       '.plumgrid_plugin.NeutronPluginPLUMgridV2'),
+            'contexts': [],
             'services': [],
-            'packages': [['plumgrid-lxc'],
-                         ['iovisor-dkms']],
+            'packages': ['plumgrid-lxc',
+                         'iovisor-dkms'],
             'server_packages': ['neutron-server',
                                 'neutron-plugin-plumgrid'],
             'server_services': ['neutron-server']
@@ -213,19 +180,15 @@ def neutron_plugins():
         'midonet': {
             'config': '/etc/neutron/plugins/midonet/midonet.ini',
             'driver': 'midonet.neutron.plugin.MidonetPluginV2',
-            'contexts': [
-                context.SharedDBContext(user=config('neutron-database-user'),
-                                        database=config('neutron-database'),
-                                        relation_prefix='neutron',
-                                        ssl_dir=NEUTRON_CONF_DIR)],
+            'contexts': [],
             'services': [],
-            'packages': [[headers_package()] + determine_dkms_package()],
+            'packages': [determine_dkms_package()],
             'server_packages': ['neutron-server',
                                 'python-neutron-plugin-midonet'],
             'server_services': ['neutron-server']
         }
     }
-    if release >= 'icehouse':
+    if CompareOpenStackReleases(release) >= 'icehouse':
         # NOTE: patch in ml2 plugin for icehouse onwards
         plugins['ovs']['config'] = '/etc/neutron/plugins/ml2/ml2_conf.ini'
         plugins['ovs']['driver'] = 'neutron.plugins.ml2.plugin.Ml2Plugin'
@@ -233,6 +196,27 @@ def neutron_plugins():
                                              'neutron-plugin-ml2']
         # NOTE: patch in vmware renames nvp->nsx for icehouse onwards
         plugins['nvp'] = plugins['nsx']
+    if CompareOpenStackReleases(release) >= 'kilo':
+        plugins['midonet']['driver'] = (
+            'neutron.plugins.midonet.plugin.MidonetPluginV2')
+    if CompareOpenStackReleases(release) >= 'liberty':
+        plugins['midonet']['driver'] = (
+            'midonet.neutron.plugin_v1.MidonetPluginV2')
+        plugins['midonet']['server_packages'].remove(
+            'python-neutron-plugin-midonet')
+        plugins['midonet']['server_packages'].append(
+            'python-networking-midonet')
+        plugins['plumgrid']['driver'] = (
+            'networking_plumgrid.neutron.plugins'
+            '.plugin.NeutronPluginPLUMgridV2')
+        plugins['plumgrid']['server_packages'].remove(
+            'neutron-plugin-plumgrid')
+    if CompareOpenStackReleases(release) >= 'mitaka':
+        plugins['nsx']['server_packages'].remove('neutron-plugin-vmware')
+        plugins['nsx']['server_packages'].append('python-vmware-nsx')
+        plugins['nsx']['config'] = '/etc/neutron/nsx.ini'
+        plugins['vsp']['driver'] = (
+            'nuage_neutron.plugins.nuage.plugin.NuagePlugin')
     return plugins
 
 
